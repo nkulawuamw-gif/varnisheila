@@ -1,0 +1,129 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Management - {% block title %}Dashboard{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+{% block full_content %}
+    <div class="d-flex" id="wrapper">
+        <div class="sidebar d-flex flex-column flex-shrink-0 p-3" id="sidebar">
+            <a href="{{ url_for('dashboard') }}" class="d-flex align-items-center mb-3 text-white text-decoration-none">
+                <i class="bi bi-box-seam me-2 fs-4"></i>
+                <span class="fs-5 fw-semibold">Inventory</span>
+            </a>
+            <hr class="text-secondary">
+            <ul class="nav nav-pills flex-column mb-auto">
+                <li class="nav-item">
+                    <a href="{{ url_for('dashboard') }}" class="nav-link text-white {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                        <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('products') }}" class="nav-link text-white {% if request.endpoint == 'products' %}active{% endif %}">
+                        <i class="bi bi-box me-2"></i> Warehouse Products
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('stock_in') }}" class="nav-link text-white {% if request.endpoint == 'stock_in' %}active{% endif %}">
+                        <i class="bi bi-arrow-down-circle me-2"></i> Stock In
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('stock_out') }}" class="nav-link text-white {% if request.endpoint == 'stock_out' %}active{% endif %}">
+                        <i class="bi bi-arrow-up-circle me-2"></i> Stock Out
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('pos') }}" class="nav-link text-white {% if request.endpoint == 'pos' %}active{% endif %}">
+                        <i class="bi bi-cart me-2"></i> Point of Sale
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('low_stock') }}" class="nav-link text-white {% if request.endpoint == 'low_stock' %}active{% endif %}">
+                        <i class="bi bi-exclamation-triangle me-2"></i> Low Stock
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('reports') }}" class="nav-link text-white {% if request.endpoint in ['reports', 'report_stock', 'report_low_stock', 'report_stock_in', 'report_stock_out'] %}active{% endif %}">
+                        <i class="bi bi-file-earmark-bar-graph me-2"></i> Reports
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('distribute') }}" class="nav-link text-white {% if request.endpoint == 'distribute' %}active{% endif %}">
+                        <i class="bi bi-truck me-2"></i> Distribute to Shops
+                    </a>
+                </li>
+                <li class="nav-item mt-2">
+                    <small class="text-secondary text-uppercase px-2 fw-bold">Shops</small>
+                </li>
+                {% for s in shops_list %}
+                <li>
+                    <a href="{{ url_for('shop_products', sid=s.id) }}" class="nav-link text-white {% if request.endpoint == 'shop_products' and request.view_args.sid == s.id %}active{% endif %}">
+                        <i class="bi bi-shop me-2"></i> {{ s.name }}
+                    </a>
+                </li>
+                {% else %}
+                <li>
+                    <a href="{{ url_for('shops') }}" class="nav-link text-white {% if request.endpoint in ['shops', 'shop_products'] %}active{% endif %}">
+                        <i class="bi bi-shop me-2"></i> Shops
+                    </a>
+                </li>
+                {% endfor %}
+                <li>
+                    <a href="{{ url_for('users') }}" class="nav-link text-white {% if request.endpoint == 'users' %}active{% endif %}">
+                        <i class="bi bi-people me-2"></i> Users
+                    </a>
+                </li>
+            </ul>
+            <hr class="text-secondary">
+            <div class="dropdown">
+                <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="bi bi-person-circle me-2"></i>
+                    <strong>{{ current_user or 'User' }}</strong>
+                </a>
+            </div>
+        </div>
+
+        <div id="page-content-wrapper" class="w-100">
+            <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom d-lg-none">
+                <div class="container-fluid">
+                    <button class="btn btn-primary" id="sidebarToggle" type="button">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <span class="navbar-brand ms-2">Inventory</span>
+                </div>
+            </nav>
+            <div class="container-fluid p-4">
+                {% if db_error %}
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <strong>Database Error:</strong> Cannot connect to Google Sheets. Check your credentials and internet connection.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endif %}
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+                {% endif %}
+                {% endwith %}
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    {% block scripts %}{% endblock %}
+{% endblock %}
+</body>
+</html>

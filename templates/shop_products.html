@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}{{ shop }} Products{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-shop me-2"></i>{{ shop }}</h2>
+    <a href="{{ url_for('shops') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> All Shops
+    </a>
+</div>
+
+<div class="card shadow-sm mb-4 border-success">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="bi bi-arrow-down-circle me-2"></i>Receive Stock from Warehouse</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('shop_stock_in', sid=shop_id) }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+            <div class="row g-3">
+                <div class="col-md-5">
+                    <label class="form-label">Product <span class="text-danger">*</span></label>
+                    <select name="product_id" class="form-select" required>
+                        <option value="">Select product...</option>
+                        {% for p in warehouse_products %}
+                        <option value="{{ p.id }}">{{ p.name }} ({{ p.quantity }} in warehouse) — MK{{ "%.2f"|format(p.price) }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Quantity <span class="text-danger">*</span></label>
+                    <input type="number" name="quantity" class="form-control" min="1" required>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-arrow-down-circle me-1"></i> Receive from Warehouse
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="bi bi-box me-2"></i>Current Stock in {{ shop }}</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Product ID</th>
+                        <th>Product Name</th>
+                        <th>Qty</th>
+                        <th>Unit Price</th>
+                        <th>Total Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in products %}
+                    <tr>
+                        <td><code>{{ p.id }}</code></td>
+                        <td>{{ p.name }}</td>
+                        <td><span class="badge bg-info fs-6">{{ p.shop_qty }}</span></td>
+                        <td>MK{{ "%.2f"|format(p.unit_price) }}</td>
+                        <td><strong>MK{{ "%.2f"|format(p.shop_qty * p.unit_price) }}</strong></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-center text-muted py-4">No stock in this shop yet</td></tr>
+                    {% endfor %}
+                </tbody>
+                {% if products %}
+                <tfoot class="table-dark">
+                    <tr>
+                        <td colspan="4" class="text-end fw-bold">Grand Total:</td>
+                        <td class="fw-bold">MK{{ "%.2f"|format(grand_total) }}</td>
+                    </tr>
+                </tfoot>
+                {% endif %}
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Stock-In History</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Transaction ID</th>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                        <th>Received By</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in records %}
+                    <tr>
+                        <td><code>{{ r.id }}</code></td>
+                        <td>{{ r.product_name }}</td>
+                        <td><span class="badge bg-success">{{ r.qty }}</span></td>
+                        <td>{{ r.transferred_by }}</td>
+                        <td><small>{{ r.timestamp }}</small></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-center text-muted py-4">No stock received yet</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

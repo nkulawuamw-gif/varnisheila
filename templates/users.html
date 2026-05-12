@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}Users{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-people me-2"></i>Users</h2>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+        <i class="bi bi-plus-lg me-1"></i> Add User
+    </button>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>User ID</th>
+                        <th>Full Name</th>
+                        <th>Username</th>
+                        <th>Role</th>
+                        <th>Date Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td><code>{{ u.id }}</code></td>
+                        <td>{{ u.full_name }}</td>
+                        <td>{{ u.username }}</td>
+                        <td>
+                            <span class="badge {{ 'bg-danger' if u.role == 'admin' else 'bg-info' }}">
+                                {{ u.role }}
+                            </span>
+                        </td>
+                        <td><small>{{ u.date_created }}</small></td>
+                        <td>
+                            <button class="btn btn-sm btn-warning edit-user-btn"
+                                data-uid="{{ u.id }}"
+                                data-fullname="{{ u.full_name }}"
+                                data-username="{{ u.username }}"
+                                data-role="{{ u.role }}">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            {% if u.id != session.user_id %}
+                            <a href="{{ url_for('delete_user', uid=u.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete user {{ u.full_name }}?')">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="text-center text-muted py-4">No users found</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('add_user') }}">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Full Name <span class="text-danger">*</span></label>
+                        <input type="text" name="full_name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Username <span class="text-danger">*</span></label>
+                        <input type="text" name="username" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password <span class="text-danger">*</span></label>
+                        <input type="password" name="password" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Role</label>
+                        <select name="role" class="form-select">
+                            <option value="staff">Staff</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('edit_user') }}">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="uid" id="edit-uid">
+                    <div class="mb-3">
+                        <label class="form-label">Full Name <span class="text-danger">*</span></label>
+                        <input type="text" name="full_name" id="edit-fullname" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Username <span class="text-danger">*</span></label>
+                        <input type="text" name="username" id="edit-username" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password (leave blank to keep)</label>
+                        <input type="password" name="password" class="form-control" placeholder="New password">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Role</label>
+                        <select name="role" id="edit-role" class="form-select">
+                            <option value="staff">Staff</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.querySelectorAll('.edit-user-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.getElementById('edit-uid').value = this.dataset.uid;
+        document.getElementById('edit-fullname').value = this.dataset.fullname;
+        document.getElementById('edit-username').value = this.dataset.username;
+        document.getElementById('edit-role').value = this.dataset.role;
+        new bootstrap.Modal(document.getElementById('editUserModal')).show();
+    });
+});
+</script>
+{% endblock %}

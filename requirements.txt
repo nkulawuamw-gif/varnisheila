@@ -1,0 +1,4 @@
+Flask==3.0.0
+firebase-admin==6.5.0
+bleach==6.1.0
+gunicorn==21.2.0

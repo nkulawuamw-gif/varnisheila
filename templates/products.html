@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block title %}Warehouse Products{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-box me-2"></i>Warehouse Products</h2>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">
+        <i class="bi bi-plus-lg me-1"></i> Add Product
+    </button>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('products') }}" class="row g-2">
+            <div class="col-md-10">
+                <input type="text" name="search" class="form-control" placeholder="Search by name or category..." value="{{ search }}" list="productSearchList" autocomplete="off">
+                <datalist id="productSearchList">
+                    {% for p in products %}
+                    <option value="{{ p.name }}">{{ p.category }}</option>
+                    {% endfor %}
+                </datalist>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-secondary w-100"><i class="bi bi-search me-1"></i>Search</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th>Unit</th>
+                        <th>Buying Price</th>
+                        <th>Selling Price</th>
+                        <th>Quantity</th>
+                        <th>Reorder Level</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in products %}
+                    <tr class="{{ 'table-danger' if p.low_stock else '' }}">
+                        <td>{{ p.id }}</td>
+                        <td>{{ p.name }}</td>
+                        <td>{{ p.category }}</td>
+                        <td>{{ p.unit }}</td>
+                        <td>MK{{ p.buying_price }}</td>
+                        <td>MK{{ p.selling_price }}</td>
+                        <td>
+                            <span class="badge {{ 'bg-danger' if p.low_stock else 'bg-success' }}">{{ p.quantity }}</span>
+                        </td>
+                        <td>{{ p.reorder_level }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-warning edit-btn" data-pid="{{ p.id }}" data-name="{{ p.name }}" data-category="{{ p.category }}" data-unit="{{ p.unit }}" data-buying="{{ p.buying_price }}" data-selling="{{ p.selling_price }}" data-quantity="{{ p.quantity }}" data-reorder="{{ p.reorder_level }}">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <a href="{{ url_for('delete_product', pid=p.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete {{ p.name }}?')">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="9" class="text-center text-muted py-4">No products found. Click "Add Product" to start.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addProductModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('add_product') }}">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Product</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Product Name <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Category</label>
+                        <input type="text" name="category" class="form-control" placeholder="e.g. Food, Beverages">
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label class="form-label">Unit</label>
+                            <input type="text" name="unit" class="form-control" placeholder="pcs, kg, bottle">
+                        </div>
+                        <div class="col">
+                            <label class="form-label">Buying Price</label>
+                            <input type="number" name="buying_price" class="form-control" step="0.01" value="0">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label class="form-label">Selling Price</label>
+                            <input type="number" name="selling_price" class="form-control" step="0.01" value="0">
+                        </div>
+                        <div class="col">
+                            <label class="form-label">Quantity</label>
+                            <input type="number" name="quantity" class="form-control" value="0">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Reorder Level</label>
+                        <input type="number" name="reorder_level" class="form-control" value="0">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Product</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editProductModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('edit_product') }}">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Product</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="pid" id="edit-pid">
+                    <div class="mb-3">
+                        <label class="form-label">Product Name <span class="text-danger">*</span></label>
+                        <input type="text" name="name" id="edit-name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Category</label>
+                        <input type="text" name="category" id="edit-category" class="form-control">
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label class="form-label">Unit</label>
+                            <input type="text" name="unit" id="edit-unit" class="form-control">
+                        </div>
+                        <div class="col">
+                            <label class="form-label">Buying Price</label>
+                            <input type="number" name="buying_price" id="edit-buying" class="form-control" step="0.01">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label class="form-label">Selling Price</label>
+                            <input type="number" name="selling_price" id="edit-selling" class="form-control" step="0.01">
+                        </div>
+                        <div class="col">
+                            <label class="form-label">Quantity</label>
+                            <input type="number" name="quantity" id="edit-quantity" class="form-control">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Reorder Level</label>
+                        <input type="number" name="reorder_level" id="edit-reorder" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Product</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.getElementById('edit-pid').value = this.dataset.pid;
+        document.getElementById('edit-name').value = this.dataset.name;
+        document.getElementById('edit-category').value = this.dataset.category;
+        document.getElementById('edit-unit').value = this.dataset.unit;
+        document.getElementById('edit-buying').value = this.dataset.buying;
+        document.getElementById('edit-selling').value = this.dataset.selling;
+        document.getElementById('edit-quantity').value = this.dataset.quantity;
+        document.getElementById('edit-reorder').value = this.dataset.reorder;
+        new bootstrap.Modal(document.getElementById('editProductModal')).show();
+    });
+});
+</script>
+{% endblock %}

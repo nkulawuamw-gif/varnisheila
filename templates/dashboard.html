@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-speedometer2 me-2"></i>Dashboard</h2>
+    <a href="{{ url_for('seed_sample') }}" class="btn btn-outline-warning">
+        <i class="bi bi-database-fill-add me-1"></i> Load Sample Data
+    </a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-primary h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">Warehouse Products</h6>
+                        <h2 class="mb-0">{{ total_products }}</h2>
+                    </div>
+                    <i class="bi bi-box fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-success h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">Total Stock</h6>
+                        <h2 class="mb-0">{{ total_qty }}</h2>
+                    </div>
+                    <i class="bi bi-boxes fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-danger h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">Low Stock Items</h6>
+                        <h2 class="mb-0">{{ low_stock_count }}</h2>
+                    </div>
+                    <i class="bi bi-exclamation-triangle fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-arrow-down-circle text-success me-2"></i>Recent Stock In</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Product</th>
+                                <th>Qty</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in recent_in %}
+                            <tr>
+                                <td>{{ item.product_name }}</td>
+                                <td><span class="badge bg-success">{{ item.qty }}</span></td>
+                                <td><small>{{ item.timestamp[:10] }}</small></td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="3" class="text-center text-muted py-3">No recent stock in</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-arrow-up-circle text-danger me-2"></i>Recent Stock Out</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Product</th>
+                                <th>Qty</th>
+                                <th>Reason</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in recent_out %}
+                            <tr>
+                                <td>{{ item.product_name }}</td>
+                                <td><span class="badge bg-danger">{{ item.qty }}</span></td>
+                                <td><small>{{ item.reason }}</small></td>
+                                <td><small>{{ item.timestamp[:10] }}</small></td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="4" class="text-center text-muted py-3">No recent stock out</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

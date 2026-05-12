@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Stock Out{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-arrow-up-circle me-2"></i>Stock Out</h2>
+    <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#addStockOutModal">
+        <i class="bi bi-plus-lg me-1"></i> Remove Stock
+    </button>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('add_stock_out') }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Product <span class="text-danger">*</span></label>
+                    <input type="text" name="product_id" class="form-control" list="productList" placeholder="Type or select product..." required autocomplete="off">
+                    <datalist id="productList">
+                        {% for p in products %}
+                        <option value="{{ p.id }}">{{ p.name }} ({{ p.quantity }} available)</option>
+                        {% endfor %}
+                    </datalist>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Quantity <span class="text-danger">*</span></label>
+                    <input type="number" name="quantity" class="form-control" min="1" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Customer</label>
+                    <input type="text" name="customer" class="form-control" placeholder="Customer name">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Reason</label>
+                    <select name="reason" class="form-select">
+                        <option value="sale">Sale</option>
+                        <option value="damaged">Damaged</option>
+                        <option value="expired">Expired</option>
+                        <option value="used">Used</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-danger w-100">
+                        <i class="bi bi-check-lg me-1"></i> Remove
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Transaction ID</th>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                        <th>Customer</th>
+                        <th>Reason</th>
+                        <th>Removed By</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in records %}
+                    <tr>
+                        <td><code>{{ r.id }}</code></td>
+                        <td>{{ r.product_name }}</td>
+                        <td><span class="badge bg-danger">{{ r.qty }}</span></td>
+                        <td>{{ r.customer }}</td>
+                        <td>{{ r.reason }}</td>
+                        <td>{{ r.removed_by }}</td>
+                        <td><small>{{ r.timestamp }}</small></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="7" class="text-center text-muted py-4">No stock out records yet</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

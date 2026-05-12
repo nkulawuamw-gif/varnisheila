@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Distribute to Shops{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-truck me-2"></i>Distribute to Shops</h2>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('transfer_stock') }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Shop <span class="text-danger">*</span></label>
+                    <select name="shop_id" class="form-select" required>
+                        <option value="">Select shop...</option>
+                        {% for s in shops %}
+                        <option value="{{ s.id }}">{{ s.name }} — {{ s.location }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Product <span class="text-danger">*</span></label>
+                    <input type="text" name="product_id" class="form-control" list="productDistList" placeholder="Type to search product..." required autocomplete="off">
+                    <datalist id="productDistList">
+                        {% for p in products %}
+                        <option value="{{ p.id }}">{{ p.name }} ({{ p.quantity }} in warehouse)</option>
+                        {% endfor %}
+                    </datalist>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Quantity <span class="text-danger">*</span></label>
+                    <input type="number" name="quantity" class="form-control" min="1" required>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-truck me-1"></i> Transfer
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Transfer History</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Transaction ID</th>
+                        <th>Shop</th>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                        <th>Transferred By</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in records %}
+                    <tr>
+                        <td><code>{{ r.id }}</code></td>
+                        <td>{{ r.shop_name }}</td>
+                        <td>{{ r.product_name }}</td>
+                        <td><span class="badge bg-info">{{ r.qty }}</span></td>
+                        <td>{{ r.transferred_by }}</td>
+                        <td><small>{{ r.timestamp }}</small></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="text-center text-muted py-4">No transfers yet</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

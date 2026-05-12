@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+{% block title %}Point of Sale{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-cart me-2"></i>Point of Sale</h2>
+</div>
+
+{% if is_admin %}
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form class="row g-3" method="GET">
+            <div class="col-md-4">
+                <label class="form-label">Select Shop</label>
+                <select name="shop" class="form-select" onchange="this.form.submit()">
+                    <option value="">— Choose a shop —</option>
+                    {% for s in shops %}
+                    <option value="{{ s.id }}" {% if selected_shop == s.id %}selected{% endif %}>{{ s.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% if selected_shop %}
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card shadow-sm">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="bi bi-box me-2"></i>Products</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-dark sticky-top">
+                            <tr>
+                                <th>Product</th>
+                                <th>Price</th>
+                                <th>Available</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in products %}
+                            <tr>
+                                <td>{{ p.name }}</td>
+                                <td>MK{{ "%.2f"|format(p.price) }}</td>
+                                <td><span class="badge bg-info">{{ p.qty }} {{ p.unit }}</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-success add-to-cart"
+                                        data-id="{{ p.id }}"
+                                        data-name="{{ p.name }}"
+                                        data-price="{{ p.price }}"
+                                        data-max="{{ p.qty }}">
+                                        <i class="bi bi-plus-lg"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="4" class="text-center text-muted py-4">No stock in this shop</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-cart-check me-2"></i>Cart</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('pos_sell') }}" id="posForm">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="shop_id" value="{{ selected_shop }}">
+                    <input type="hidden" name="items" id="itemsInput">
+                    <div class="mb-3">
+                        <label class="form-label">Customer</label>
+                        <input type="text" name="customer" class="form-control" placeholder="Walk-in Customer">
+                    </div>
+                    <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                        <table class="table table-sm mb-0" id="cartTable">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Qty</th>
+                                    <th>Total</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="cartBody">
+                                <tr id="emptyCart">
+                                    <td colspan="4" class="text-center text-muted py-3">Cart is empty</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-3">
+                        <h4 class="mb-0">Total:</h4>
+                        <h4 class="mb-0" id="grandTotal">MK0.00</h4>
+                    </div>
+                    <button type="submit" class="btn btn-success btn-lg w-100" id="checkoutBtn" disabled>
+                        <i class="bi bi-check-circle me-2"></i>Complete Sale
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mt-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Sales</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Receipt</th>
+                                <th>Total</th>
+                                <th>Sold By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in sales %}
+                            <tr>
+                                <td><code>{{ r.receipt_id }}</code></td>
+                                <td><strong>MK{{ "%.2f"|format(r.grand_total) }}</strong></td>
+                                <td><small>{{ r.sold_by }}</small></td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="3" class="text-center text-muted py-3">No sales yet</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% elif not is_admin and not selected_shop %}
+<div class="alert alert-warning">No shop assigned to your account. Contact an admin.</div>
+{% else %}
+<div class="alert alert-info">Select a shop to start selling.</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+let cart = [];
+
+document.querySelectorAll('.add-to-cart').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const id = this.dataset.id;
+        const name = this.dataset.name;
+        const price = parseFloat(this.dataset.price);
+        const max = parseInt(this.dataset.max);
+
+        const existing = cart.find(item => item.product_id === id);
+        if (existing) {
+            if (existing.qty >= max) {
+                alert('Not enough stock!');
+                return;
+            }
+            existing.qty++;
+        } else {
+            cart.push({ product_id: id, name: name, price: price, qty: 1 });
+        }
+        renderCart();
+    });
+});
+
+function renderCart() {
+    const tbody = document.getElementById('cartBody');
+    const empty = document.getElementById('emptyCart');
+    const totalEl = document.getElementById('grandTotal');
+    const checkoutBtn = document.getElementById('checkoutBtn');
+    const itemsInput = document.getElementById('itemsInput');
+
+    tbody.innerHTML = '';
+    let total = 0;
+
+    if (cart.length === 0) {
+        tbody.innerHTML = '<tr id="emptyCart"><td colspan="4" class="text-center text-muted py-3">Cart is empty</td></tr>';
+        totalEl.textContent = 'MK0.00';
+        checkoutBtn.disabled = true;
+        itemsInput.value = '[]';
+        return;
+    }
+
+    cart.forEach((item, index) => {
+        const lineTotal = item.qty * item.price;
+        total += lineTotal;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${item.name}</td>
+            <td>
+                <div class="input-group input-group-sm" style="max-width: 100px;">
+                    <button class="btn btn-outline-secondary qty-down" data-index="${index}">−</button>
+                    <input type="number" class="form-control text-center qty-input" value="${item.qty}" min="1" data-index="${index}" style="width: 40px;">
+                    <button class="btn btn-outline-secondary qty-up" data-index="${index}">+</button>
+                </div>
+            </td>
+            <td>MK${lineTotal.toFixed(2)}</td>
+            <td><button class="btn btn-sm btn-danger remove-item" data-index="${index}"><i class="bi bi-trash"></i></button></td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    totalEl.textContent = `MK${total.toFixed(2)}`;
+    checkoutBtn.disabled = false;
+    itemsInput.value = JSON.stringify(cart.map(item => ({
+        product_id: item.product_id,
+        name: item.name,
+        price: item.price,
+        qty: item.qty
+    })));
+
+    document.querySelectorAll('.qty-up').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const idx = parseInt(this.dataset.index);
+            const item = cart[idx];
+            const max = parseInt(document.querySelector(`.add-to-cart[data-id="${item.product_id}"]`).dataset.max);
+            if (item.qty < max) {
+                item.qty++;
+                renderCart();
+            } else {
+                alert('Not enough stock!');
+            }
+        });
+    });
+
+    document.querySelectorAll('.qty-down').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const idx = parseInt(this.dataset.index);
+            if (cart[idx].qty > 1) {
+                cart[idx].qty--;
+                renderCart();
+            }
+        });
+    });
+
+    document.querySelectorAll('.qty-input').forEach(input => {
+        input.addEventListener('change', function() {
+            const idx = parseInt(this.dataset.index);
+            const val = parseInt(this.value);
+            const max = parseInt(document.querySelector(`.add-to-cart[data-id="${cart[idx].product_id}"]`).dataset.max);
+            if (val > 0 && val <= max) {
+                cart[idx].qty = val;
+            } else {
+                alert(`Quantity must be between 1 and ${max}`);
+                this.value = cart[idx].qty;
+            }
+            renderCart();
+        });
+    });
+
+    document.querySelectorAll('.remove-item').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const idx = parseInt(this.dataset.index);
+            cart.splice(idx, 1);
+            renderCart();
+        });
+    });
+}
+</script>
+{% endblock %}
