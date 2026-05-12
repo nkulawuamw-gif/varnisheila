@@ -78,7 +78,6 @@
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('pos_sell') }}" id="posForm">
-                    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
                     <input type="hidden" name="shop_id" value="{{ selected_shop }}">
                     <input type="hidden" name="items" id="itemsInput">
                     <div class="mb-3">

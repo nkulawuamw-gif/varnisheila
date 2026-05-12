@@ -10,8 +10,7 @@
 
 <div class="card shadow-sm mb-4">
     <div class="card-body">
-        <form method="POST" action="{{ url_for('add_stock_out') }}">
-            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+            <form method="POST" action="{{ url_for('add_stock_out') }}">
             <div class="row g-3">
                 <div class="col-md-3">
                     <label class="form-label">Product <span class="text-danger">*</span></label>

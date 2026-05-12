@@ -18,6 +18,7 @@ body {
     border-radius: 0.5rem;
     margin-bottom: 2px;
     transition: all 0.2s;
+    font-size: 0.9rem;
 }
 
 .sidebar .nav-link:hover {
@@ -86,4 +87,31 @@ body {
 .alert {
     border: none;
     border-radius: 0.75rem;
+}
+
+.table-responsive {
+    min-height: 0;
+}
+
+code {
+    font-size: 0.8rem;
+}
+
+.sidebar .nav-item small {
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+}
+
+.dropdown-toggle::after {
+    display: none;
+}
+
+input[type="number"]::-webkit-inner-spin-button {
+    opacity: 0.5;
+}
+
+.sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
