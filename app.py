@@ -46,7 +46,7 @@ def get_db():
     global _firebase_db, _firebase_initialized
     if _firebase_db is None:
         try:
-            cred = credentials.Certificate(Config.FIREBASE_CREDENTIALS)
+            cred = credentials.Certificate(Config.get_firebase_cred())
             firebase_admin.initialize_app(cred)
             _firebase_db = firestore.client()
             _firebase_initialized = True
@@ -1218,13 +1218,18 @@ def pos():
     shops_data = get_all(COL_SHOPS)
     is_admin = session.get("role") == "admin"
 
+    assigned = _get_assigned_shop()
+    assigned_id = assigned.get("id", "") if assigned else ""
+    explicit_shop = request.args.get("shop", "")
+
     if is_admin:
         shop_list = [{"id": s.get("id", ""), "name": s.get("name", "")} for s in shops_data]
-        selected_shop_id = request.args.get("shop", "")
+        selected_shop_id = explicit_shop or assigned_id
     else:
-        assigned = _get_assigned_shop()
-        selected_shop_id = assigned.get("id", "") if assigned else ""
+        selected_shop_id = assigned_id
         shop_list = [{"id": selected_shop_id, "name": assigned.get("name", "")}] if assigned else []
+
+    is_auto_selected = bool(not explicit_shop and assigned_id and selected_shop_id == assigned_id)
 
     products = []
     stock_data = get_all(COL_SHOP_STOCK)
@@ -1257,7 +1262,13 @@ def pos():
         reverse=True,
     )[:20]
 
-    return render_template("pos.html", shops=shop_list, products=products, sales=sales, selected_shop=selected_shop_id, is_admin=is_admin)
+    selected_shop_name = ""
+    for s in shops_data:
+        if s.get("id") == selected_shop_id:
+            selected_shop_name = s.get("name", "")
+            break
+
+    return render_template("pos.html", shops=shop_list, products=products, sales=sales, selected_shop=selected_shop_id, selected_shop_name=selected_shop_name, is_admin=is_admin, is_auto_selected=is_auto_selected)
 
 
 @app.route("/pos/sell", methods=["POST"])

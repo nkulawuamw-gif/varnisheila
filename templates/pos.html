@@ -5,23 +5,27 @@
     <h2><i class="bi bi-cart me-2"></i>Point of Sale</h2>
 </div>
 
-{% if is_admin %}
 <div class="card shadow-sm mb-4">
     <div class="card-body">
-        <form class="row g-3" method="GET">
+        <div class="row g-3 align-items-end">
             <div class="col-md-4">
-                <label class="form-label">Select Shop</label>
-                <select name="shop" class="form-select" onchange="this.form.submit()">
-                    <option value="">— Choose a shop —</option>
+                <label class="form-label">Shop</label>
+                {% if is_admin and shops|length > 1 %}
+                <select class="form-select" {% if is_auto_selected %}disabled{% endif %} onchange="window.location='{{ url_for('pos') }}?shop='+this.value">
+                    <option value="">— Select a shop —</option>
                     {% for s in shops %}
                     <option value="{{ s.id }}" {% if selected_shop == s.id %}selected{% endif %}>{{ s.name }}</option>
                     {% endfor %}
                 </select>
+                {% else %}
+                <div class="form-control-plaintext fw-bold fs-5">
+                    <span class="badge bg-info fs-5"><i class="bi bi-shop me-1"></i>{{ selected_shop_name }}</span>
+                </div>
+                {% endif %}
             </div>
-        </form>
+        </div>
     </div>
 </div>
-{% endif %}
 
 {% if selected_shop %}
 <div class="row g-4">
