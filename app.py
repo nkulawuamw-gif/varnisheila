@@ -43,10 +43,24 @@ def init_firebase():
     if _firebase_initialized:
         return _firebase_db
     try:
-        firebase_json = json.loads(os.environ["FIREBASE_SERVICE_ACCOUNT"])
+        creds = None
+        raw = os.environ.get("FIREBASE_SERVICE_ACCOUNT") or os.environ.get("FIREBASE_CREDENTIALS_JSON")
+        if raw:
+            creds = json.loads(raw)
+        if not creds:
+            for path in [
+                os.environ.get("FIREBASE_CREDENTIALS", ""),
+                os.path.join(os.path.dirname(os.path.abspath(__file__)), "private", "firebase-key.json"),
+                os.path.join(os.path.dirname(os.path.abspath(__file__)), "private", "credentials.json"),
+            ]:
+                if path and os.path.exists(path):
+                    with open(path) as f:
+                        creds = json.load(f)
+                    break
+        if not creds:
+            raise Exception("No Firebase credentials found. Set FIREBASE_SERVICE_ACCOUNT env var or place private/firebase-key.json")
         if not firebase_admin._apps:
-            cred = credentials.Certificate(firebase_json)
-            firebase_admin.initialize_app(cred)
+            firebase_admin.initialize_app(credentials.Certificate(creds))
         _firebase_db = firestore.client()
         _firebase_initialized = True
         logger.info("Firebase initialized successfully")
@@ -812,19 +826,30 @@ def seed_admin():
     db = get_db()
     if not db:
         return
-    if len(list(db.collection(COL_USERS).stream())) == 0:
-        db.collection(COL_USERS).document("U001").set({
-            "id": "U001", "full_name": "Admin", "username": "admin",
-            "password": hash_password("admin123"), "role": "admin",
-            "date_created": now_str(),
-        })
-        print("Default admin created: admin / admin123")
+    try:
+        users = list(db.collection(COL_USERS).stream())
+        admin_exists = any(u.to_dict().get("username") == "admin" for u in users)
+        if not admin_exists:
+            db.collection(COL_USERS).document("U001").set({
+                "id": "U001", "full_name": "Admin", "username": "admin",
+                "password": hash_password("admin123"), "role": "admin",
+                "date_created": now_str(),
+            })
+            print("Default admin created: admin / admin123")
+    except Exception as e:
+        logger.warning(f"seed_admin check failed: {e}")
+
+
+# Run seed_admin on import (caters to gunicorn which skips __main__)
+try:
+    with app.app_context():
+        seed_admin()
+except Exception as e:
+    logger.warning(f"Startup seed_admin skipped: {e}")
 
 
 # =========================
 # MAIN
 # =========================
 if __name__ == "__main__":
-    with app.app_context():
-        seed_admin()
     app.run(host="0.0.0.0", port=5000)
